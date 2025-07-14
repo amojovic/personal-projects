@@ -1,0 +1,49 @@
+#include <Servo.h>
+
+Servo servoX; 
+Servo servoY; 
+
+const int signalPin = 7; 
+unsigned long previousMillis = 0; 
+const unsigned long highInterval = 2000; 
+const unsigned long lowInterval = 5000; 
+bool signalState = false; 
+
+void setup() {
+  servoX.attach(9); 
+  servoY.attach(10); 
+
+  servoX.write(90); 
+  servoY.write(90);
+
+  pinMode(signalPin, OUTPUT); 
+  digitalWrite(signalPin, LOW); 
+
+  Serial.begin(9600); 
+}
+
+void loop() {
+  unsigned long currentMillis = millis(); 
+  if (!signalState && (currentMillis - previousMillis >= lowInterval)) {
+    signalState = true;
+    previousMillis = currentMillis; 
+    digitalWrite(signalPin, HIGH); 
+  } else if (signalState && (currentMillis - previousMillis >= highInterval)) {
+    signalState = false;
+    previousMillis = currentMillis; // Reset timer
+    digitalWrite(signalPin, LOW); // Set signal LOW
+  }
+
+  if (Serial.available() > 0) {
+    String data = Serial.readStringUntil('\n'); 
+    int commaIndex = data.indexOf(',');
+    if (commaIndex > 0) {
+      int x = data.substring(0, commaIndex).toInt();  
+      int y = data.substring(commaIndex + 1).toInt(); 
+
+      servoX.write(x);
+      servoY.write(y);
+    }
+  }
+}
+
