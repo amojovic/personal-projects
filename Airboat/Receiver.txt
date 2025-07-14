@@ -1,0 +1,58 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <Servo.h>
+
+RF24 radio(7, 8); 
+const byte address[6] = "00001";
+
+Servo myServo; 
+
+
+const int transistorPin = 3;
+
+struct JoystickData {
+  int x;
+  int y;
+  bool buttonPressed;
+};
+
+
+int previousServoAngle = -1;
+
+void setup() {
+  Serial.begin(9600);
+  
+  myServo.attach(9); 
+
+  
+  pinMode(transistorPin, OUTPUT);
+  digitalWrite(transistorPin, LOW); 
+  
+  radio.begin();
+  radio.openReadingPipe(0, address);
+  radio.setPALevel(RF24_PA_MIN);
+  radio.startListening();
+}
+
+void loop() {
+  if (radio.available()) {
+    JoystickData data;
+    radio.read(&data, sizeof(data));
+
+    
+    int servoAngle = map(data.x, 0, 1023, 0, 180);
+
+    if (servoAngle != previousServoAngle) {
+      myServo.write(servoAngle); 
+      previousServoAngle = servoAngle; 
+    }
+
+    if (data.buttonPressed) {
+      digitalWrite(transistorPin, HIGH); 
+    } else {
+      digitalWrite(transistorPin, LOW);  
+    }
+
+  }
+}
